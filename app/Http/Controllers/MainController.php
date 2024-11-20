@@ -16,6 +16,6 @@ class MainController extends Controller
     }
 
     public function showData() {
-        return response()->json($this->app_data);
+        return view('components.main-layout');
     }
 }
