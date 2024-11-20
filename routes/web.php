@@ -14,4 +14,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::view('/', 'Home');
+//start game
+
+Route::get('/', [MainController::class, 'startGame'])->name('startGame');
+
+Route::post('/', [MainController::class, 'prepareGame'])->name('prepareGame');
