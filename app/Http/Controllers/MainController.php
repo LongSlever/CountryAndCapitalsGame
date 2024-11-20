@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 
 class MainController extends Controller
 {
@@ -121,7 +122,79 @@ class MainController extends Controller
 
     }
 
-    public function answer() {
-        
+    public function answer($enc_answer) {
+
+        try {
+            $answer = Crypt::decryptString($enc_answer);
+        } catch (\Exception $e) {
+            return redirect()->route('game');
+        }
+
+        // game logic
+
+        $quiz = session('quiz');
+        $current_question = session('current_question') - 1;
+        $correct_answer = $quiz[$current_question]['correct_answer'];
+        $correct_answers = session('correct_answers');
+        $wrong_answers = session('wrong_answers');
+
+        if($answer == $correct_answer) {
+            $correct_answers++;
+            $quiz[$current_question]['correct'] = true;
+        } else {
+            $wrong_answers++;
+            $quiz[$current_question]['correct'] = false;
+        }
+
+        //update session
+
+        session()->put([
+            'quiz' => $quiz,
+            'correct_answers' => $correct_answers,
+            'wrong_answers' => $wrong_answers,
+        ]);
+
+
+        // prepare data to show the correct answer
+
+        $data = [
+            'country' => $quiz[$current_question]['country'],
+            'correct_answer' => $correct_answer,
+            'choice_answer' => $answer,
+            'currentQuestion' => $current_question,
+            'totalQuestions' => session('total_questions')
+        ];
+
+        return view('answer_result')->with($data);
+
+    }
+
+    public function next_question() {
+        $current_question = session('current_question');
+        $total_questions = session('total_questions');
+
+
+        // check if the gamei sover
+
+        if($current_question < $total_questions) {
+            $current_question++;
+            session()->put('current_question', $current_question);
+            return redirect()->route('game');
+        } else {
+            return redirect()->route('show_results');
+        }
+    }
+
+    public function showResults() {
+        $total_questions = session('total_quesitons');
+
+        $correct_answers = session('correct_answers');
+
+        return view('final_results')->with([
+            'total_questions' => session('total_questions'),
+            'wrong_answers' => session('wrong_answers'),
+            'correct_answers' => session('correct_answers'),
+            'percentage' => round(session('correct_answers') / session('total_questions')*100)
+        ]);
     }
 }
